@@ -6,23 +6,50 @@
 
 namespace {
     const std::string scoreFile = "high_scores.cpp";
+    using Scores = std::map<std::string, int>;
 
-    void addScore(const std::string& userName, int userScore) {
+    void updateScores(Scores& scores, const std::string& name, int score) {
+        auto it = scores.find(name);
+        if (it != scores.end()) {
+            if (score < it->second) {
+                it->second = score;
+            }
+        } else {
+            scores[name] = score;
+        }    
+    }
+
+    bool isFileGood() {
         if (!std::filesystem::exists(scoreFile)) {
             std::ofstream newFile(scoreFile);
             if (!newFile.is_open()) {
                 std::cout << "Cannot create new file " << scoreFile << std::endl;
-                return;
+                return false;
             }
         }
-        
-        std::fstream file(scoreFile, std::ios_base::in);
-        if (!file) {
-            std::cout << "Cannot open file for reading (1) " << scoreFile << std::endl;
+        return true;
+    }
+    
+    void writeFile(const Scores& scores) {
+        std::ofstream file(scoreFile, std::ios_base::trunc);
+        if (!file.is_open()) {
+            std::cout << "Cannot open file for writing " << scoreFile << std::endl;
             return;
         }
 
-        std::map<std::string, int> nameToScore;
+        for (const auto& [k, v] : scores) {
+            file << k << " " << v << '\n';
+        }
+    }
+
+    Scores readFile() {
+        std::ifstream file(scoreFile);
+        if (!file.is_open()) {
+            std::cout << "Cannot open file for reading " << scoreFile << std::endl;
+            return {};
+        }
+
+        Scores scores;
         std::string name;
         int score;
         while (file) {            
@@ -30,63 +57,25 @@ namespace {
             if (!file) {
                 continue;
             }
-
-            if (nameToScore.count(name)) {
-                if (score < nameToScore[name]) {
-                    nameToScore[name] = score;
-                }
-            } else {
-                nameToScore[name] = score;
-            }
+            updateScores(scores, name, score);
         }
 
-        if (nameToScore.count(userName)) {
-            if (userScore < nameToScore[userName]) {
-                nameToScore[userName] = userScore;
-            }
-        } else {
-            nameToScore[userName] = userScore;
-        }
+        return scores;
+    }
 
-        file.close();
-        file.open(scoreFile, std::ios_base::out | std::ios_base::trunc);
-        if (!file.is_open()) {
-            std::cout << "Cannot open file for writing" << scoreFile << std::endl;
+    void addScore(const std::string& name, int score) {        
+        if (!isFileGood()) {
             return;
         }
-
-        for (const auto& [k, v] : nameToScore) {
-            file << k << " " << v << '\n';
-        }
+        
+        auto scores = readFile();
+        updateScores(scores, name, score);
+        writeFile(scores);        
     }
 
     void printScore(const char* prefix = "") {
-        std::ifstream ifs(scoreFile);
-        if (!ifs.is_open()) {
-            std::cout << "Cannot open file for reading (2) " << scoreFile << std::endl;
-            return;
-        }
-
-        std::string name;
-        int score;
-        std::map<std::string, int> nameToScore;
-        while (ifs) {
-            ifs >> name >> score;
-            if (!ifs) {
-                continue;
-            }
-            
-            if (nameToScore.count(name)) {
-                if (score < nameToScore[name]) {
-                    nameToScore[name] = score;
-                }
-            } else {
-                nameToScore[name] = score;
-            }
-        }
-
         std::cout << prefix << "High scores table:" << std::endl;
-        for (const auto &[k, v] : nameToScore) {
+        for (const auto& [k, v] : readFile()) {
             std::cout << k << " " << v << std::endl;
         }
     }
@@ -133,7 +122,7 @@ int main(int argc, char** argv) {
     string userName;
     cin >> userName;
 
-    std:srand(std::time(nullptr));
+    std::srand(std::time(nullptr));
     const int magicNumber = std::rand() % getMaxNumber(argc, argv);
     cout << "Enter your guess:" << endl;
 
