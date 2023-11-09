@@ -3,7 +3,11 @@ cmake_minimum_required(VERSION 3.8)
 project(homework2)
 
 add_executable(homework2
-    main.cpp    
+    hello_world.cpp
+    example.cpp
+    example.h
+    move_me_out.cpp
+    move_me_out.h
 )
 
 set_target_properties(homework2 PROPERTIES
