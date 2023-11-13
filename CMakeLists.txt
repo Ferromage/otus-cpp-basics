@@ -4,4 +4,5 @@ project(education)
 
 #add_subdirectory(src/homework_2)
 #add_subdirectory(src/homework_3)
-add_subdirectory(src/homework_4)
+#add_subdirectory(src/homework_4)
+add_subdirectory(src/homework_5)
